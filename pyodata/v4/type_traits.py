@@ -30,6 +30,10 @@ class EdmDoubleQuotesEncapsulatedTypTraits(TypTraits):
         return self.to_literal(value)
 
     def from_literal(self, value):
+        if isinstance(value, int):
+            return str(value)
+        if isinstance(value, float):
+            return str(value)
         return value.strip('\"')
 
     def from_json(self, value):
@@ -230,15 +234,18 @@ class EdmDateTimeOffsetTypTraits(EdmDoubleQuotesEncapsulatedTypTraits):
             if value[len(value) - 1] == 'Z':
                 value = value[:len(value) - 1] + "+0000"
 
-        try:
-            value = datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%f%z')
-        except ValueError:
+        if value == '0000-00-00T00:00:00':
+            value = None
+        else:
             try:
-                value = datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%S%z')
+                value = datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%f%z')
             except ValueError:
-                raise PyODataModelError('Cannot decode datetime from value {}.'.format(value))
+                try:
+                    value = datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%S%z')
+                except ValueError:
+                    raise PyODataModelError('Cannot decode datetime from value {}.'.format(value))
 
-        if value.tzinfo is None:
+        if value and value.tzinfo is None:
             value = value.replace(tzinfo=datetime.timezone.utc)
 
         return value

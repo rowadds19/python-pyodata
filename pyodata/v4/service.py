@@ -1070,7 +1070,11 @@ class EntitySetProxy:
                 raise HttpError('HTTP GET for Entity {0} failed with status code {1}'
                                 .format(self._name, response.status_code), response)
 
-            entity = response.json()['d']
+            content = response.json()
+            try:
+                entities = content['d']['results']
+            except KeyError:
+                entities = content['value']
 
             return NavEntityProxy(parent, nav_property, navigation_entity_set.entity_type, entity)
 
@@ -1098,7 +1102,11 @@ class EntitySetProxy:
                 raise HttpError('HTTP GET for Entity {0} failed with status code {1}'
                                 .format(self._name, response.status_code), response)
 
-            entity = response.json()['d']
+            content = response.json()
+            try:
+                entity = content['d']
+            except KeyError:
+                entity = content
 
             return EntityProxy(self._service, self._entity_set, self._entity_set.entity_type, entity)
 
@@ -1126,7 +1134,10 @@ class EntitySetProxy:
             if isinstance(content, int):
                 return content
 
-            entities = content['d']['results']
+            try:
+                entities = content['d']['results']
+            except KeyError:
+                entities = content['value']
 
             result = []
             for props in entities:
@@ -1285,7 +1296,11 @@ class FunctionContainer:
                     'The Function Import %s has replied with HTTP Status Code %d instead of 200',
                     fimport.name, response.status_code)
 
-            response_data = response.json()['d']
+            content = response.json()
+            try:
+                response_data = content['d']
+            except KeyError:
+                response_data = content
 
             # 1. if return types is "entity type", return instance of appropriate entity proxy
             if isinstance(fimport.return_type, elements.EntityType):
